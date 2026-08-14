@@ -368,6 +368,33 @@ serializes concurrent WebSocket writes. It does **not** own pending responses,
 terminal arbitration, timeout/cancel operations, generation tasks, history, or
 reconnect state.
 
+### Voice tracing
+
+When OpenTelemetry tracing is configured, each Voice WebSocket attempt creates
+one `agentserver.connection` span under the W3C context extracted from the
+upgrade headers. The span covers SDK-owned connection work, including accept,
+typed dispatch, termination callbacks, and close diagnostics. Connection and
+callback errors are recorded with content-free categories.
+
+The upgrade preserves `traceparent` and `tracestate`, but retains only bounded,
+platform-approved correlation baggage and a valid bounded `x-request-id`.
+Arbitrary caller baggage is discarded before callbacks or SDK logs can observe
+it.
+
+The SDK creates a standard `invoke_agent` span while dispatching each
+`user.message` or `user.no_input` callback. An accepted proactive response gets
+the same span with `turn.origin=proactive`, `bridge.input.count=0`, and its
+`gen_ai.response.id`; a dropped proactive request does not create a turn span.
+Customer spans opened by a callback, including spans opened in a background task
+created by that callback, inherit the `invoke_agent` parent context.
+
+The `invoke_agent` span ends when callback dispatch returns. The SDK does not
+retain or await a background task and does not inspect outbound frames to infer
+response identity, output counts, response completion, timeout arbitration, or
+other application-owned lifecycle state. Transcript text, output text, callback
+exception messages, and other Voice payload content are not added to these
+spans or SDK error logs.
+
 When the peer or proxy closes the WebSocket, `@app.on_disconnect` receives a
 local `SessionDisconnected` event. This callback represents only the observed
 peer disconnect.

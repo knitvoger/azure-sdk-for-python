@@ -385,8 +385,8 @@ def test_voice_upgrade_preserves_repeated_w3c_headers():
             (b"traceparent", f"00-{expected_trace_id}-2222222222222222-01".encode()),
             (b"tracestate", b"vendor1=value1"),
             (b"tracestate", b"vendor2=value2"),
-            (b"baggage", b"tenant.id=tenant-1"),
-            (b"baggage", b"region=west"),
+            (b"baggage", b"leaf_customer_span_id=123,tenant.id=tenant-1"),
+            (b"baggage", b"azure.ai.agentserver.conversation_id=conversation-1,region=west"),
             (b"x-request-id", b""),
             (b"x-request-id", b"request-first"),
             (b"x-request-id", b"request-second"),
@@ -399,8 +399,10 @@ def test_voice_upgrade_preserves_repeated_w3c_headers():
     assert f"{span_context.trace_id:032x}" == expected_trace_id
     assert span_context.trace_state.get("vendor1") == "value1"
     assert span_context.trace_state.get("vendor2") == "value2"
-    assert baggage.get_baggage("tenant.id", context=context) == "tenant-1"
-    assert baggage.get_baggage("region", context=context) == "west"
+    assert baggage.get_baggage("leaf_customer_span_id", context=context) == "123"
+    assert baggage.get_baggage("azure.ai.agentserver.conversation_id", context=context) == "conversation-1"
+    assert baggage.get_baggage("tenant.id", context=context) is None
+    assert baggage.get_baggage("region", context=context) is None
     assert baggage.get_baggage("x_request_id", context=context) == "request-first"
 
 
