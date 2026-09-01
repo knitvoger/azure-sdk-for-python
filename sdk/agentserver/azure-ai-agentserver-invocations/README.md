@@ -477,7 +477,7 @@ code catches cancellation and returns normally, recovery is outside the SDK
 contract; the SDK does not forcibly terminate or retain that callback.
 
 For full-duplex streaming, the agent creates and owns a generation task, returns
-from `on_user_message`, and cancels that task from `on_barge_in`,
+from `on_user_message`, and cancels that task from `on_user_barge_in`,
 `on_response_cancelled`, `on_response_timeout`, or
 `on_connection_terminating`. Each task remains responsible for its own
 asynchronous resource cleanup. See the complete

@@ -5,7 +5,6 @@
 
 from ._models import (
     AgentError,
-    BargeIn,
     EndCall,
     EndCallMode,
     InboundVoiceMessage,
@@ -27,6 +26,7 @@ from ._models import (
     SessionReady,
     SessionRejected,
     SessionStart,
+    UserBargeIn,
     UserMessage,
     UserNoInput,
     UserSpeechStarted,
@@ -37,7 +37,6 @@ from ._models import (
 from ._session import Session, SessionTermination
 from ._turn import TargetTurn, TargetTurnOrigin, TargetTurnOutcome
 from ._voice_host import (
-    BargeInCallback,
     ConnectionTerminatingCallback,
     DisconnectCallback,
     ResponseAcceptedCallback,
@@ -46,6 +45,7 @@ from ._voice_host import (
     ResponseTimeoutCallback,
     SessionEndCallback,
     SessionStartCallback,
+    UserBargeInCallback,
     UserMessageCallback,
     UserNoInputCallback,
     UserSpeechStartedCallback,
@@ -54,8 +54,6 @@ from ._voice_host import (
 
 __all__ = [
     "AgentError",
-    "BargeIn",
-    "BargeInCallback",
     "ConnectionTerminatingCallback",
     "DisconnectCallback",
     "EndCall",
@@ -90,6 +88,8 @@ __all__ = [
     "TargetTurn",
     "TargetTurnOrigin",
     "TargetTurnOutcome",
+    "UserBargeIn",
+    "UserBargeInCallback",
     "UserMessage",
     "UserMessageCallback",
     "UserNoInput",

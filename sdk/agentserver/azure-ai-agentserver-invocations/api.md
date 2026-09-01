@@ -76,13 +76,13 @@ namespace azure.ai.agentserver.invocations.voice
 
     @experimental
     @dataclass(frozen=True, kw_only=True, repr=False)
-    class azure.ai.agentserver.invocations.voice.BargeIn(_InboundMessage):
+    class azure.ai.agentserver.invocations.voice.UserBargeIn(_InboundMessage):
         heard_text: str
         id: str
         item_id: Optional[str]
         response_id: str
         ts: str
-        type: ClassVar[str] = barge_in
+        type: ClassVar[str] = user.barge_in
 
         def __delattr__() -> None: ...
 
@@ -769,7 +769,7 @@ namespace azure.ai.agentserver.invocations.voice
 
         def invoke_handler(self, fn: Callable[[Request], Awaitable[Response]]) -> Callable[[Request], Awaitable[Response]]: ...
 
-        def on_barge_in(self, callback: BargeInCallback) -> BargeInCallback: ...
+        def on_user_barge_in(self, callback: UserBargeInCallback) -> UserBargeInCallback: ...
 
         def on_connection_terminating(self, callback: ConnectionTerminatingCallback) -> ConnectionTerminatingCallback: ...
 

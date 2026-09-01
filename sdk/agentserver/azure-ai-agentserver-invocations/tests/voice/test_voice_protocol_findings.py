@@ -18,6 +18,7 @@ from azure.ai.agentserver.invocations.voice import (
     SessionEnd,
     SessionReady,
     SessionTermination,
+    UserBargeIn,
     UserSpeechStarted,
     VoiceAgentServerHost,
 )
@@ -298,3 +299,42 @@ async def test_non_terminal_event_continues_dispatch():
 
     assert websocket.receive.await_count == 2
     assert [event.id for event in observed_events] == ["m_first", "m_second"]
+
+
+@pytest.mark.asyncio
+async def test_user_barge_in_dispatches_renamed_event():
+    app = VoiceAgentServerHost(configure_observability=None)
+    websocket = AsyncMock()
+    websocket.scope = {}
+    websocket.receive.side_effect = [
+        _voice_frame(
+            "user.barge_in",
+            "m_barge_in",
+            response_id="r_1",
+            item_id="it_1",
+            heard_text="heard",
+        )
+    ]
+    observed_events = []
+
+    class UserBargeInObserved(Exception):
+        pass
+
+    @app.on_user_barge_in
+    async def on_user_barge_in(_session, event):
+        observed_events.append(event)
+        raise UserBargeInObserved("user.barge_in observed")
+
+    with pytest.raises(UserBargeInObserved, match="user.barge_in observed"):
+        await app._handle_voice_connection(websocket)  # pylint: disable=protected-access
+
+    assert websocket.receive.await_count == 1
+    assert observed_events == [
+        UserBargeIn(
+            id="m_barge_in",
+            ts="2026-08-12T00:00:00Z",
+            response_id="r_1",
+            item_id="it_1",
+            heard_text="heard",
+        )
+    ]

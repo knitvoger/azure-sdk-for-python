@@ -14,6 +14,12 @@
 - Added source-aware `Session.termination` for classifying unfinished
   application work during connection cleanup.
 
+### Breaking Changes
+
+- Renamed the experimental Voice barge-in event from `barge_in` to
+  `user.barge_in`, including `BargeIn` to `UserBargeIn`, `BargeInCallback` to
+  `UserBargeInCallback`, and `on_barge_in` to `on_user_barge_in`.
+
 ### Samples
 
 - Updated `basic_voice_agent` to declare target turns around real background
