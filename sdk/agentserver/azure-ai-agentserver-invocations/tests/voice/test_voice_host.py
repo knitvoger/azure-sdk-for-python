@@ -15,10 +15,12 @@ from azure.ai.agentserver.invocations import InvocationAgentServerHost
 from azure.ai.agentserver.invocations.voice import (
     ResponseCreated,
     ResponseDone,
+    ResponseNone,
     ResponseOutputTextDone,
     Session,
     SessionReady,
     SessionStart,
+    UserBargeIn,
     UserMessage,
     VoiceAgentServerHost,
 )
@@ -45,6 +47,54 @@ class TestVoiceEndpointRoutes:
         assert routes == [("/invocations_ws", "invocations_ws"), ("/conversation_engine", "conversation_engine")]
         assert app.url_path_for("invocations_ws") == "/invocations_ws"
         assert app.url_path_for("conversation_engine") == "/conversation_engine"
+
+    @pytest.mark.parametrize("protocol", ["invocations_ws", "conversation_engine"])
+    def test_both_routes_dispatch_only_user_barge_in(self, protocol: str, session_start_frame) -> None:
+        app = VoiceAgentServerHost(configure_observability=None)
+        interruptions = []
+
+        @app.on_session_start
+        async def start(session: Session, _event: SessionStart) -> None:
+            await session.send(SessionReady())
+
+        @app.on_user_barge_in
+        async def interrupted(_session: Session, event: UserBargeIn) -> None:
+            interruptions.append(event)
+
+        @app.on_user_message
+        async def barrier(session: Session, event: UserMessage) -> None:
+            await session.send(ResponseNone(in_reply_to=(event.item_id,)))
+
+        with TestClient(app).websocket_connect(f"/{protocol}") as websocket:
+            websocket.send_json(session_start_frame)
+            assert websocket.receive_json()["type"] == "session.ready"
+            for message_type in ("barge_in", "user.barge_in"):
+                websocket.send_json(
+                    {
+                        "type": message_type,
+                        "id": f"m_{message_type}",
+                        "ts": "2026-10-19T00:00:01Z",
+                        "response_id": "r_reply",
+                        "item_id": "it_reply",
+                        "heard_text": "heard prefix",
+                    }
+                )
+            websocket.send_json(
+                {
+                    "type": "user.message",
+                    "id": "m_barrier",
+                    "ts": "2026-10-19T00:00:02Z",
+                    "item_id": "in_barrier",
+                    "content": [{"type": "input_text", "text": "next"}],
+                }
+            )
+            assert websocket.receive_json()["type"] == "response.none"
+        assert len(interruptions) == 1
+        assert isinstance(interruptions[0], UserBargeIn)
+        assert interruptions[0].type == "user.barge_in"
+        assert interruptions[0].response_id == "r_reply"
+        assert interruptions[0].item_id == "it_reply"
+        assert interruptions[0].heard_text == "heard prefix"
 
     @pytest.mark.parametrize("protocol", ["invocations_ws", "conversation_engine"])
     def test_both_endpoints_relay_existing_bridge_messages(self, protocol: str, session_start_frame) -> None:
